@@ -1,9 +1,12 @@
 from django.shortcuts import render
 from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
-from rest_framework import permissions
 from .models import Movement, Meal, Program, Diet, User
 from .serializers import MovementSerializer, MealSerializer, ProgramSerializer, DietSerializer, UserSerializer
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+from rest_framework import permissions
 
 class ReadOnlyIfNotAdminPermission(IsAuthenticated):
     def has_permission(self, request, view):
@@ -13,7 +16,11 @@ class ReadOnlyIfNotAdminPermission(IsAuthenticated):
         if request.user.is_staff:
             return True
             
+        if isinstance(view, UserViewSet):
+            return request.method in ['GET', 'HEAD', 'OPTIONS', 'PATCH', 'PUT']
+            
         return request.method in ['GET', 'HEAD', 'OPTIONS']
+
 
 class IsOwnerOrAdmin(permissions.BasePermission):
     def has_permission(self, request, view):
@@ -50,9 +57,17 @@ class DietViewSet(viewsets.ModelViewSet):
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
-    permission_classes = [IsOwnerOrAdmin]
+    permission_classes = [ReadOnlyIfNotAdminPermission]
 
     def get_queryset(self):
         if self.request.user.is_staff:
             return User.objects.all()
         return User.objects.filter(id=self.request.user.id)
+
+class LogoutView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        # Delete the user's token
+        request.user.auth_token.delete()
+        return Response({"message": "Successfully logged out."}, status=status.HTTP_200_OK)
