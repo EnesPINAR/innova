@@ -1,6 +1,14 @@
 from django.db import models
 from datetime import date
-from django.core.validators import MinValueValidator
+from django.core.validators import BaseValidator
+from phonenumber_field.modelfields import PhoneNumberField
+
+class MinValueValidator(BaseValidator):
+    message = "Bu değer %(limit_value)s değerinden büyük veya eşit olmalıdır."
+    code = "min_value"
+
+    def compare(self, a, b):
+        return a < b
 
 # Create your models here.
 class Movement(models.Model):
@@ -92,12 +100,7 @@ class User(models.Model):
         ('0-', '0-'),
     ]
     
-    phone_number = models.CharField(
-        max_length=15, 
-        unique=True,
-        help_text='Kullanıcı telefon numarası',
-        null=True,
-    )
+    phone_number = PhoneNumberField(default='+900000000000', help_text='Kullanıcı telefon numarası', null=True, blank=True)
     name = models.CharField(max_length=100, null=True, help_text='Kullanıcı adı')
     surname = models.CharField(max_length=100, null=True, help_text='Kullanıcı soyadı')
     password = models.CharField(max_length=128, help_text='Kullanıcı şifresi')
