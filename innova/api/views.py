@@ -1,6 +1,7 @@
 from django.shortcuts import render
 from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
+from rest_framework import permissions
 from .models import Movement, Meal, Program, Diet, User
 from .serializers import MovementSerializer, MealSerializer, ProgramSerializer, DietSerializer, UserSerializer
 
@@ -13,6 +14,18 @@ class ReadOnlyIfNotAdminPermission(IsAuthenticated):
             return True
             
         return request.method in ['GET', 'HEAD', 'OPTIONS']
+
+class IsOwnerOrAdmin(permissions.BasePermission):
+    def has_permission(self, request, view):
+        return bool(request.user and request.user.is_authenticated)
+
+    def has_object_permission(self, request, view, obj):
+        # Allow admin users full access
+        if request.user.is_staff:
+            return True
+            
+        # Allow users to view/update their own profile
+        return obj.id == request.user.id
 
 class MovementViewSet(viewsets.ModelViewSet):
     queryset = Movement.objects.all()
@@ -37,7 +50,7 @@ class DietViewSet(viewsets.ModelViewSet):
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
-    permission_classes = [ReadOnlyIfNotAdminPermission]
+    permission_classes = [IsOwnerOrAdmin]
 
     def get_queryset(self):
         if self.request.user.is_staff:

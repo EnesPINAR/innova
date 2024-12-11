@@ -134,12 +134,12 @@ class User(AbstractUser):
     USERNAME_FIELD = 'phone_number'
     REQUIRED_FIELDS = ['first_name', 'last_name']
 
-    height = models.DecimalField(max_digits=5, decimal_places=2, help_text='Boy (cm)', null=True, blank=True)
-    weight = models.DecimalField(max_digits=5, decimal_places=2, help_text='Kilo (kg)', null=True, blank=True) 
-    birth_date = models.DateField(null=True, blank=True)
-    blood_type = models.CharField(max_length=3, choices=BLOOD_TYPES, null=True, blank=True)
-    membership_start = models.DateField(help_text='Üyelik başlangıç tarihi', default=date.today, blank=False)
-    membership_end = models.DateField(help_text='Üyelik bitiş tarihi', null=True, blank=False)
+    height = models.DecimalField(max_digits=5, decimal_places=2, help_text='Boy (cm)', null=True, blank=True, editable=True)
+    weight = models.DecimalField(max_digits=5, decimal_places=2, help_text='Kilo (kg)', null=True, blank=True, editable=True) 
+    birth_date = models.DateField(null=True, blank=True, editable=True)
+    blood_type = models.CharField(max_length=3, choices=BLOOD_TYPES, null=True, blank=True, editable=True)
+    membership_start = models.DateField(help_text='Üyelik başlangıç tarihi', default=date.today, blank=False, editable=True)
+    membership_end = models.DateField(help_text='Üyelik bitiş tarihi', null=True, blank=False, editable=True)
     program = models.ForeignKey('Program', on_delete=models.SET_NULL, null=True, blank=True, verbose_name='Program')
     diet = models.ForeignKey('Diet', on_delete=models.SET_NULL, null=True, blank=True, verbose_name='Diyet')
     

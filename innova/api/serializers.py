@@ -36,7 +36,9 @@ class UserSerializer(serializers.ModelSerializer):
     age = serializers.ReadOnlyField()
     active = serializers.ReadOnlyField()
     remaining_days = serializers.ReadOnlyField()
-    password = serializers.CharField(write_only=True)
+    password = serializers.CharField(write_only=True, required=False)
+    height = serializers.DecimalField(max_digits=5, decimal_places=2, required=False)
+    weight = serializers.DecimalField(max_digits=5, decimal_places=2, required=False)
 
     class Meta:
         model = User
@@ -45,9 +47,11 @@ class UserSerializer(serializers.ModelSerializer):
             'birth_date', 'blood_type', 'membership_start', 'membership_end',
             'program', 'diet', 'age', 'active', 'remaining_days', 'password'
         ]
-        extra_kwargs = {
-            'password': {'write_only': True}
-        }
+        read_only_fields = [
+            'id', 'phone_number', 'first_name', 'last_name',
+            'birth_date', 'blood_type', 'membership_start', 'membership_end',
+            'program', 'diet'
+        ]
 
     def create(self, validated_data):
         user = User(**validated_data)
@@ -56,28 +60,16 @@ class UserSerializer(serializers.ModelSerializer):
         return user
 
     def update(self, instance, validated_data):
+        # Handle password separately if it's included
         if 'password' in validated_data:
-            instance.set_password(validated_data.pop('password'))
-        return super().update(instance, validated_data)
-
-    def set_password(self, raw_password):
-        self.password = make_password(raw_password)
-
-    def check_password(self, raw_password):
-        return check_password(raw_password, self.password)
-
-    def save(self, *args, **kwargs):
-        # Ensure password is hashed before saving
-        if self._state.adding or self._password_changed:
-            self.set_password(self.password)
-        super().save(*args, **kwargs)
-
-    @classmethod
-    def authenticate(cls, phone_number, password):
-        try:
-            user = cls.objects.get(phone_number=phone_number)
-            if user.check_password(password):
-                return user
-        except cls.DoesNotExist:
-            pass
-        return None 
+            password = validated_data.pop('password')
+            instance.set_password(password)
+        
+        # Update height and weight
+        if 'height' in validated_data:
+            instance.height = validated_data.get('height')
+        if 'weight' in validated_data:
+            instance.weight = validated_data.get('weight')
+        
+        instance.save()
+        return instance
